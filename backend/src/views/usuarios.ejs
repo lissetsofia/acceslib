@@ -1,0 +1,141 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Usuarios</strong>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevo">
+      Nuevo usuario
+    </button>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Carrera</th>
+            <th>Semestre</th>
+            <th>Rol</th>
+            <th>Activo</th>
+          </tr>
+        </thead>
+        <tbody id="tbUsuarios">
+          <tr><td colspan="6" class="text-secondary">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Usuario -->
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formNuevo">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Código</label>
+          <input class="form-control" name="codigo" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Nombre</label>
+          <input class="form-control" name="nombre" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Rol (id)</label>
+          <input class="form-control" name="rol_id" type="number" required />
+          <div class="form-text">Ej: Admin=1, Estudiante=2, Docente=3 (según tu BD)</div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Carrera (id, opcional)</label>
+          <input class="form-control" name="carrera_id" type="number" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Semestre (opcional)</label>
+          <input class="form-control" name="semestre" type="number" min="1" max="14" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Contraseña</label>
+          <input class="form-control" name="password" type="password" required />
+        </div>
+
+        <div id="msg" class="small text-danger"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+async function cargarUsuarios() {
+  const tb = document.getElementById("tbUsuarios");
+  const r = await fetch("/api/admin/users");
+  const data = await r.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    tb.innerHTML = `<tr><td colspan="6" class="text-secondary">Sin usuarios</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = data.map(u => `
+    <tr>
+      <td>${u.codigo}</td>
+      <td>${u.nombre}</td>
+      <td>${u.carrera ?? ""}</td>
+      <td>${u.semestre ?? ""}</td>
+      <td>${u.rol}</td>
+      <td>${u.activo ? "Sí" : "No"}</td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("formNuevo").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("msg");
+  msg.textContent = "";
+
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+
+  // convertir números si vienen
+  ["rol_id","carrera_id","semestre"].forEach(k => {
+    if (body[k] === "") delete body[k];
+    else body[k] = Number(body[k]);
+  });
+
+  const r = await fetch("/api/admin/users", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  });
+
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    msg.textContent = out.error || "Error al guardar";
+    return;
+  }
+
+  // cerrar modal
+  const modalEl = document.getElementById("modalNuevo");
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  modal.hide();
+
+  e.target.reset();
+  await cargarUsuarios();
+});
+
+cargarUsuarios();
+</script>

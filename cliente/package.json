@@ -1,0 +1,25 @@
+{
+  "name": "acceslib-client",
+  "version": "0.1.0",
+  "main": "main.js",
+  "description": "ACCESSLIB Client (beta)",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder -w"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "pe.unamba.acceslib.client",
+    "productName": "AccessLib Client",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

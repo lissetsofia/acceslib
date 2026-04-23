@@ -1,0 +1,217 @@
+<div class="card">
+  <div class="card-header"><strong>Gestión de PCs</strong></div>
+  <div class="card-body">
+
+    <ul class="nav nav-tabs" role="tablist" id="tabsPcs">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pendientes" type="button">Pendientes</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#vinculadas" type="button">Vinculadas</button>
+      </li>
+    </ul>
+
+    <div class="tab-content pt-3">
+      <!-- Pendientes -->
+      <div class="tab-pane fade show active" id="pendientes">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-secondary small">Solicitudes de vinculación activas</div>
+          <button class="btn btn-outline-secondary btn-sm" id="btnRefPend">Actualizar</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Hostname</th>
+                <th>IP</th>
+                <th>Solicitado</th>
+                <th>Expira</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbPendientes">
+              <tr><td colspan="6" class="text-secondary">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vinculadas -->
+      <div class="tab-pane fade" id="vinculadas">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-secondary small">Equipos vinculados</div>
+          <button class="btn btn-outline-secondary btn-sm" id="btnRefVin">Actualizar</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            <thead>
+              <tr>
+                <th>PC</th>
+                <th>Estado</th>
+                <th>Hostname</th>
+                <th>IP</th>
+                <th>Última conexión</th>
+                <th>En uso</th>
+                <th>Habilitada</th>
+              </tr>
+            </thead>
+            <tbody id="tbVinculadas">
+              <tr><td colspan="7" class="text-secondary">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Aprobar -->
+<div class="modal fade" id="modalAprobar" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formAprobar">
+      <div class="modal-header">
+        <h5 class="modal-title">Aprobar PC</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" name="pair_code" id="pair_code" />
+
+        <div class="mb-2">
+          <label class="form-label">Nombre visible (ej: PC-01)</label>
+          <input class="form-control" name="nombre_visible" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Habilitada</label>
+          <select class="form-select" name="habilitada">
+            <option value="1" selected>Sí</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+
+        <div id="msgAprobar" class="small text-danger"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Aprobar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+async function cargarPendientes() {
+  const tb = document.getElementById("tbPendientes");
+  const r = await fetch("/api/admin/pcs/pending");
+  const data = await r.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    tb.innerHTML = `<tr><td colspan="6" class="text-secondary">No hay pendientes</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = data.map(x => `
+    <tr>
+      <td><span class="badge text-bg-warning">${x.pair_code}</span></td>
+      <td>${x.hostname}</td>
+      <td>${x.ip}</td>
+      <td>${new Date(x.solicitado_en).toLocaleString()}</td>
+      <td>${new Date(x.expira_en).toLocaleString()}</td>
+      <td>
+        <button class="btn btn-sm btn-success" onclick="abrirAprobar('${x.pair_code}')">Aprobar</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function cargarVinculadas() {
+  const tb = document.getElementById("tbVinculadas");
+  const r = await fetch("/api/admin/pcs");
+  const data = await r.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    tb.innerHTML = `<tr><td colspan="7" class="text-secondary">Aún no hay PCs vinculadas</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = data.map(p => {
+    const estadoBadge = p.estado_pc === "ONLINE"
+      ? `<span class="badge text-bg-success">ONLINE</span>`
+      : `<span class="badge text-bg-secondary">OFFLINE</span>`;
+
+    const enUso = p.usuario_codigo
+      ? `<span class="badge text-bg-primary">${p.usuario_codigo} - ${p.usuario_nombre}</span>`
+      : `<span class="text-secondary">Libre</span>`;
+
+    return `
+      <tr>
+        <td><strong>${p.nombre_visible ?? ("PC#" + p.id)}</strong></td>
+        <td>${estadoBadge}</td>
+        <td>${p.hostname ?? ""}</td>
+        <td>${p.ip_last ?? ""}</td>
+        <td>${p.last_seen ? new Date(p.last_seen).toLocaleString() : ""}</td>
+        <td>${enUso}</td>
+        <td>${p.habilitada ? "Sí" : "No"}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function abrirAprobar(pairCode) {
+  document.getElementById("pair_code").value = pairCode;
+  document.getElementById("msgAprobar").textContent = "";
+  const modal = new bootstrap.Modal(document.getElementById("modalAprobar"));
+  modal.show();
+}
+
+document.getElementById("btnRefPend").addEventListener("click", cargarPendientes);
+document.getElementById("btnRefVin").addEventListener("click", cargarVinculadas);
+
+// submit aprobar
+document.getElementById("formAprobar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("msgAprobar");
+  msg.textContent = "";
+
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.habilitada = Number(body.habilitada);
+
+  const r = await fetch("/api/admin/pcs/approve", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    msg.textContent = out.error || out.detail || "Error al aprobar";
+    return;
+  }
+
+  // cerrar modal
+  const modalEl = document.getElementById("modalAprobar");
+  bootstrap.Modal.getInstance(modalEl).hide();
+
+  // refrescar tablas y cambiar a Vinculadas
+  await cargarPendientes();
+  await cargarVinculadas();
+
+  // activar tab Vinculadas
+  const tabBtn = document.querySelector('[data-bs-target="#vinculadas"]');
+  new bootstrap.Tab(tabBtn).show();
+
+  e.target.reset();
+});
+
+// carga inicial
+cargarPendientes();
+cargarVinculadas();
+</script>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AccessLib Client (Beta)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="screen">
+    <div class="app-shell">
+      <!-- Panel izquierdo -->
+      <aside class="left-panel">
+
+        <div class="brand-box">
+          <div class="brand-badge">AccessLib</div>
+          <h1>Universidad Nacional Micaela Bastidas de Apurímac - UNAMBA</h1>
+          <p class="brand-subtitle">
+            Sistema de control y registro de uso de computadoras en biblioteca
+          </p>
+        </div>
+
+        <div class="form-card">
+          <!-- Login -->
+          <section id="view-login" class="panel-view">
+            <h2>INICIO DE SESIÓN</h2>
+
+            <label for="codigo">Usuario</label>
+            <input id="codigo" type="text" placeholder="Código de estudiante o usuario" />
+
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="Ingrese su contraseña" />
+
+            <div class="btn-group single">
+              <button id="btnLogin">Iniciar sesión</button>
+            </div>
+
+            <div class="err" id="loginErr"></div>
+
+            <div class="register-box">
+              <strong>Registrarse</strong>
+              <p>
+                Esta opción estará disponible en una segunda fase. Cuando se implemente,
+                desde esta misma pantalla se podrá acceder al formulario de registro.
+              </p>
+            </div>
+          </section>
+
+          <!-- Vinculación -->
+          <section id="view-pair" class="panel-view hidden">
+            <h2>VINCULACIÓN DEL EQUIPO</h2>
+            <p class="muted">Genera un código y espera aprobación desde el panel administrador.</p>
+
+            <div class="btn-group single">
+              <button id="btnPair">Generar código</button>
+            </div>
+
+            <div class="code" id="pairCode">—</div>
+            <div class="muted" id="pairInfo"></div>
+
+            <label for="serverUrl">Servidor (URL)</label>
+            <input id="serverUrl" placeholder="http://192.168.1.50:3000" />
+
+            <div class="btn-group stack">
+              <button id="btnGuardarServidor" class="secondary">Guardar servidor</button>
+              <button id="btnEnableLock" class="secondary">Activar modo biblioteca</button>
+              <button id="btnGoLogin" class="secondary" disabled>Ir a Login</button>
+            </div>
+
+            <div class="muted" id="serverInfo"></div>
+            <div class="muted" id="lockInfo"></div>
+            <div class="err" id="pairErr"></div>
+          </section>
+        </div>
+      </aside>
+
+      <!-- Panel derecho -->
+      <main class="right-panel">
+       <div class="hero-content">
+          <div class="banner-card full-banner">
+            <div class="banner-placeholder">
+              <span>Espacio para banner institucional de la universidad</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SESIÓN ACTIVA pequeña a la derecha -->
+            <section id="view-session" class="session-panel hidden">
+        <h2>SESIÓN ACTIVA</h2>
+
+        <div class="session-box compact">
+          <div class="session-item">
+            <span class="session-label">Usuario</span>
+            <strong id="sesUser">—</strong>
+          </div>
+
+          <div class="session-item">
+            <span class="session-label">PC</span>
+            <strong id="sesPc">—</strong>
+          </div>
+        </div>
+
+        <div class="timer" id="timer">00:00:00</div>
+
+        <div class="btn-group single">
+          <button id="btnLogout" class="danger">Finalizar sesión</button>
+        </div>
+
+        <div class="muted" id="hbStatus">Heartbeat: —</div>
+        <div class="err" id="sesErr"></div>
+      </section>
+      </main>
+    </div>
+
+    <footer class="bottom-note">
+      <div class="note-title">
+        <span class="info-icon">i</span>
+        <span>Notas importantes</span>
+      </div>
+
+      <p>Estudiantes: usuario = código institucional, contraseña = DNI.</p>
+      <p>Docentes: usuario = correo institucional, contraseña = DNI.</p>
+      <p>Ayuda: acudir al personal encargado de la biblioteca.</p>
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <div class="text-secondary">Sesiones activas</div>
+      <div class="fs-3" id="kpiActivas">—</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Sesiones activas</strong>
+    <button class="btn btn-outline-secondary btn-sm" id="btnRef">Actualizar</button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>PC</th>
+            <th>Usuario</th>
+            <th>Inicio</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+        <tbody id="tbActivas">
+          <tr><td colspan="4" class="text-secondary">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function fmtDur(sec){
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  return `${h}h ${m}m ${s}s`;
+}
+
+async function cargarActivas(){
+  const tb = document.getElementById("tbActivas");
+  const kpi = document.getElementById("kpiActivas");
+
+  const r = await fetch("/api/admin/sessions/active");
+  const data = await r.json();
+
+  kpi.textContent = Array.isArray(data) ? data.length : 0;
+
+  if (!Array.isArray(data) || data.length === 0) {
+    tb.innerHTML = `<tr><td colspan="4" class="text-secondary">No hay sesiones activas</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = data.map(x => `
+    <tr>
+      <td><strong>${x.pc ?? ""}</strong></td>
+      <td>${x.usuario_codigo} - ${x.usuario_nombre}</td>
+      <td>${new Date(x.inicio).toLocaleString()}</td>
+      <td>${fmtDur(Number(x.duracion_seg || 0))}</td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("btnRef").addEventListener("click", cargarActivas);
+cargarActivas();
+setInterval(cargarActivas, 5000); // cada 5 segundos
+</script>

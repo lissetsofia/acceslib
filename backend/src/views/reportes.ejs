@@ -1,0 +1,90 @@
+<div class="card mb-3">
+  <div class="card-header"><strong>Filtros</strong></div>
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" class="form-control" id="from">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="to">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary" id="btnBuscar">Buscar</button>
+        <button class="btn btn-outline-secondary" id="btnUltimos">Últimos 200</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Historial de sesiones</strong>
+    <button class="btn btn-outline-secondary btn-sm" id="btnRef">Actualizar</button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>PC</th>
+            <th>Usuario</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Duración</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody id="tbHist">
+          <tr><td colspan="6" class="text-secondary">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function fmtDur(sec){
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  return `${h}h ${m}m ${s}s`;
+}
+
+async function cargarHist(url){
+  const tb = document.getElementById("tbHist");
+  const r = await fetch(url);
+  const data = await r.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    tb.innerHTML = `<tr><td colspan="6" class="text-secondary">Sin registros</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = data.map(x => `
+    <tr>
+      <td><strong>${x.pc ?? ""}</strong></td>
+      <td>${x.usuario_codigo} - ${x.usuario_nombre}</td>
+      <td>${new Date(x.inicio).toLocaleString()}</td>
+      <td>${x.fin ? new Date(x.fin).toLocaleString() : ""}</td>
+      <td>${fmtDur(Number(x.segundos_total || 0))}</td>
+      <td>${x.motivo_cierre ?? ""}</td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("btnRef").addEventListener("click", () => cargarHist("/api/admin/sessions/history"));
+document.getElementById("btnUltimos").addEventListener("click", () => cargarHist("/api/admin/sessions/history"));
+
+document.getElementById("btnBuscar").addEventListener("click", () => {
+  const from = document.getElementById("from").value;
+  const to = document.getElementById("to").value;
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  cargarHist("/api/admin/sessions/history?" + params.toString());
+});
+
+cargarHist("/api/admin/sessions/history");
+</script>
